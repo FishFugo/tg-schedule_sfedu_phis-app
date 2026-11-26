@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Учёба — Расписание и ДЗ | Telegram Mini App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --tg-bg: var(--tg-theme-bg-color, #ffffff);
+      --tg-secondary-bg: var(--tg-theme-secondary-bg-color, #f4f4f5);
+      --tg-text: var(--tg-theme-text-color, #18181b);
+      --tg-hint: var(--tg-theme-hint-color, #71717a);
+      --tg-link: var(--tg-theme-link-color, #2563eb);
+      --tg-btn: var(--tg-theme-button-color, #2481cc);
+      --tg-btn-text: var(--tg-theme-button-text-color, #ffffff);
+      --tg-border: rgba(128, 128, 128, 0.16);
+      --tg-card: #ffffff;
+    }
+
+    html.dark {
+      --tg-bg: var(--tg-theme-bg-color, #17212b);
+      --tg-secondary-bg: var(--tg-theme-secondary-bg-color, #0e1621);
+      --tg-text: var(--tg-theme-text-color, #f5f5f5);
+      --tg-hint: var(--tg-theme-hint-color, #7e8c9a);
+      --tg-link: var(--tg-theme-link-color, #6ab3f3);
+      --tg-btn: var(--tg-theme-button-color, #5288c1);
+      --tg-btn-text: var(--tg-theme-button-text-color, #ffffff);
+      --tg-border: rgba(255, 255, 255, 0.1);
+      --tg-card: #232e3c;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--tg-secondary-bg);
+      color: var(--tg-text);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .tg-surface {
+      background-color: var(--tg-card);
+      border: 1px solid var(--tg-border);
+    }
+
+    .tg-bg-main {
+      background-color: var(--tg-bg);
+    }
+
+    .tg-bg-secondary {
+      background-color: var(--tg-secondary-bg);
+    }
+
+    .tg-text-hint {
+      color: var(--tg-hint);
+    }
+
+    .tg-btn-primary {
+      background-color: var(--tg-btn);
+      color: var(--tg-btn-text);
+    }
+
+    .tg-btn-primary:hover {
+      filter: brightness(1.06);
+    }
+
+    .tg-btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(16px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .animate-slide-up {
+      animation: slideUp 0.22s ease-out;
+    }
+  </style>
+</head>
+<body class="pb-24">
+  <div id="app" class="max-w-xl mx-auto min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="sticky top-0 z-30 tg-bg-main border-b px-4 py-3 flex items-center justify-between gap-2" style="border-color: var(--tg-border);">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-9 h-9 rounded-xl tg-btn-primary flex items-center justify-center shrink-0 shadow-sm">
+          <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <h1 id="headerTitle" class="text-base font-bold leading-tight truncate">Учёба и ДЗ</h1>
+            <span id="adminBadge" class="hidden px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase tracking-wide shrink-0">Админ</span>
+          </div>
+          <p id="headerSubtitle" class="text-xs tg-text-hint truncate">Загрузка...</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button id="adminToggleBtn" type="button" title="Режим супер-пользователя" class="p-2 rounded-xl tg-bg-secondary hover:opacity-80 transition">
+          <i id="adminIcon" data-lucide="shield" class="w-4 h-4"></i>
+        </button>
+        <button id="themeToggleBtn" type="button" title="Сменить тему" class="p-2 rounded-xl tg-bg-secondary hover:opacity-80 transition">
+          <i id="themeIcon" data-lucide="moon" class="w-4 h-4"></i>
+        </button>
+        <button id="quickShareBtn" type="button" class="px-3 py-1.5 rounded-xl tg-btn-primary text-xs font-semibold flex items-center gap-1.5 transition">
+          <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Поделиться</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Incoming Share Banner (shown if URL has #share=...) -->
+    <div id="incomingShareBanner" class="hidden mx-4 mt-3 p-3.5 rounded-2xl tg-surface shadow-sm animate-slide-up border-l-4" style="border-left-color: var(--tg-btn);">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <p class="text-sm font-semibold">Получено расписание / ДЗ</p>
+          <p id="incomingShareSummary" class="text-xs tg-text-hint mt-0.5"></p>
+        </div>
+        <button id="dismissIncomingBtn" type="button" class="p-1 rounded-lg tg-text-hint hover:opacity-75">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <button id="importMergeBtn" type="button" class="flex-1 py-2 px-3 rounded-xl tg-btn-primary text-xs font-semibold">Добавить к моему</button>
+        <button id="importReplaceBtn" type="button" class="flex-1 py-2 px-3 rounded-xl tg-bg-secondary text-xs font-semibold">Заменить моё</button>
+      </div>
+    </div>
+
+    <!-- Pinned Admin Announcement Banner -->
+    <div id="announcementBanner" class="hidden mx-4 mt-3 p-3 rounded-2xl tg-surface shadow-sm border-l-4 border-amber-500 flex items-start gap-2.5">
+      <i data-lucide="megaphone" class="w-4 h-4 text-amber-500 shrink-0 mt-0.5"></i>
+      <div class="flex-1 min-w-0">
+        <p class="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Объявление</p>
+        <p id="announcementText" class="text-xs mt-0.5 leading-relaxed"></p>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-1 px-4 pt-3 space-y-4">
+      <!-- TAB 1: SCHEDULE -->
+      <section id="tab-schedule" class="space-y-3">
+        <!-- Day Selector & View Mode -->
+        <div class="flex items-center justify-between gap-2">
+          <div id="dayTabs" class="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5 flex-1"></div>
+          <button id="weekViewToggle" type="button" class="px-2.5 py-1.5 rounded-xl tg-surface text-xs font-medium shrink-0 flex items-center gap-1">
+            <i data-lucide="calendar-days" class="w-3.5 h-3.5"></i>
+            <span id="weekViewLabel">Неделя</span>
+          </button>
+        </div>
+
+        <!-- Day Summary + Add Button -->
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 id="selectedDayTitle" class="text-sm font-bold">Понедельник</h2>
+            <p id="selectedDayMeta" class="text-xs tg-text-hint">0 пар</p>
+          </div>
+          <button id="addLessonBtn" type="button" class="px-3 py-1.5 rounded-xl tg-btn-primary text-xs font-semibold flex items-center gap-1.5">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Пара</span>
+          </button>
+        </div>
+
+        <!-- Lessons List -->
+        <div id="lessonsContainer" class="space-y-2.5"></div>
+      </section>
+
+      <!-- TAB 2: HOMEWORK -->
+      <section id="tab-homework" class="hidden space-y-3">
+        <!-- Progress Card -->
+        <div class="p-3.5 rounded-2xl tg-surface shadow-sm space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold tg-text-hint uppercase tracking-wider">Прогресс по ДЗ</span>
+            <span id="hwProgressText" class="text-xs font-bold">0 из 0 выполнено</span>
+          </div>
+          <div class="w-full h-2 rounded-full tg-bg-secondary overflow-hidden">
+            <div id="hwProgressBar" class="h-full rounded-full transition-all duration-300" style="width: 0%; background-color: var(--tg-btn);"></div>
+          </div>
+        </div>
+
+        <!-- Search & Add -->
+        <div class="flex gap-2">
+          <div class="relative flex-1">
+            <i data-lucide="search" class="w-4 h-4 tg-text-hint absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+            <input id="hwSearchInput" type="text" placeholder="Поиск по предмету или заданию..." class="w-full pl-9 pr-3 py-2 rounded-xl tg-surface text-sm outline-none focus:ring-2 focus:ring-blue-500/40" />
+          </div>
+          <button id="addHwBtn" type="button" class="px-3.5 py-2 rounded-xl tg-btn-primary text-xs font-semibold flex items-center gap-1.5 shrink-0">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>ДЗ</span>
+          </button>
+        </div>
+
+        <!-- Filters -->
+        <div id="hwFilters" class="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+          <button data-filter="active" class="hw-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold tg-btn-primary">Актуальные</button>
+          <button data-filter="urgent" class="hw-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium tg-surface">Срочные</button>
+          <button data-filter="done" class="hw-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium tg-surface">Сданные</button>
+          <button data-filter="all" class="hw-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium tg-surface">Все</button>
+        </div>
+
+        <!-- Homework List -->
+        <div id="homeworkContainer" class="space-y-2.5"></div>
+      </section>
+
+      <!-- TAB 3: SHARE & IMPORT -->
+      <section id="tab-share" class="hidden space-y-3.5">
+        <!-- Group / Class Name -->
+        <div class="p-4 rounded-2xl tg-surface shadow-sm space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-bold">Название группы / класса</h2>
+            <span class="text-xs tg-text-hint">Видно получателю</span>
+          </div>
+          <input id="groupNameInput" type="text" placeholder="Например: ИТ-201 или 10А" class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border" style="border-color: var(--tg-border);" />
+        </div>
+
+        <!-- Share Builder -->
+        <div class="p-4 rounded-2xl tg-surface shadow-sm space-y-3">
+          <h2 class="text-sm font-bold flex items-center gap-2">
+            <i data-lucide="send" class="w-4 h-4" style="color: var(--tg-link);"></i>
+            <span>Отправить одногруппникам</span>
+          </h2>
+
+          <div class="grid grid-cols-3 gap-1.5">
+            <button data-share-scope="all" class="share-scope-btn py-2 px-2 rounded-xl text-xs font-semibold tg-btn-primary text-center">Всё сразу</button>
+            <button data-share-scope="schedule" class="share-scope-btn py-2 px-2 rounded-xl text-xs font-medium tg-bg-secondary text-center">Расписание</button>
+            <button data-share-scope="homework" class="share-scope-btn py-2 px-2 rounded-xl text-xs font-medium tg-bg-secondary text-center">Только ДЗ</button>
+          </div>
+
+          <!-- Preview of text message -->
+          <div class="p-3 rounded-xl tg-bg-secondary border text-xs whitespace-pre-wrap max-h-44 overflow-y-auto leading-relaxed" style="border-color: var(--tg-border);" id="shareTextPreview"></div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button id="sendToTelegramBtn" type="button" class="py-2.5 px-3 rounded-xl tg-btn-primary text-xs font-semibold flex items-center justify-center gap-1.5">
+              <i data-lucide="send" class="w-3.5 h-3.5"></i>
+              <span>Отправить в Telegram</span>
+            </button>
+            <button id="copyShareLinkBtn" type="button" class="py-2.5 px-3 rounded-xl tg-bg-secondary border text-xs font-semibold flex items-center justify-center gap-1.5" style="border-color: var(--tg-border);">
+              <i data-lucide="link" class="w-3.5 h-3.5"></i>
+              <span>Скопировать ссылку</span>
+            </button>
+          </div>
+          <button id="copyShareTextBtn" type="button" class="w-full py-2 px-3 rounded-xl tg-bg-secondary border text-xs font-medium flex items-center justify-center gap-1.5" style="border-color: var(--tg-border);">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>Скопировать как текст для чата</span>
+          </button>
+        </div>
+
+        <!-- Import from Link / Code -->
+        <div class="p-4 rounded-2xl tg-surface shadow-sm space-y-3">
+          <h2 class="text-sm font-bold flex items-center gap-2">
+            <i data-lucide="download" class="w-4 h-4" style="color: var(--tg-link);"></i>
+            <span>Загрузить чужую ссылку или код</span>
+          </h2>
+          <textarea id="importCodeInput" rows="2" placeholder="Вставьте ссылку (#share=...) или JSON-код..." class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-xs outline-none border resize-none" style="border-color: var(--tg-border);"></textarea>
+          <div class="flex gap-2">
+            <button id="applyImportMergeBtn" type="button" class="flex-1 py-2 px-3 rounded-xl tg-btn-primary text-xs font-semibold">Добавить к моему</button>
+            <button id="applyImportReplaceBtn" type="button" class="flex-1 py-2 px-3 rounded-xl tg-bg-secondary border text-xs font-semibold" style="border-color: var(--tg-border);">Заменить всё</button>
+          </div>
+        </div>
+
+        <!-- Backup / Reset -->
+        <div class="p-4 rounded-2xl tg-surface shadow-sm flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p class="text-xs font-bold">Управление данными</p>
+            <p class="text-[11px] tg-text-hint">Данные сохраняются локально и в Telegram Cloud</p>
+          </div>
+          <div class="flex gap-2">
+            <button id="exportJsonBtn" type="button" class="px-3 py-1.5 rounded-xl tg-bg-secondary border text-xs font-medium" style="border-color: var(--tg-border);">JSON</button>
+            <button id="resetDemoBtn" type="button" class="px-3 py-1.5 rounded-xl bg-red-500/10 text-red-500 text-xs font-semibold">Сброс демо</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: SUPERUSER ADMIN PANEL -->
+      <section id="tab-admin" class="hidden space-y-3.5">
+        <!-- Admin Status Bar -->
+        <div class="p-4 rounded-2xl tg-surface shadow-sm flex items-center justify-between gap-3 border-l-4 border-amber-500">
+          <div class="min-w-0">
+            <p class="text-sm font-bold flex items-center gap-1.5">
+              <i data-lucide="shield-check" class="w-4 h-4 text-amber-500"></i>
+              <span>Панель супер-пользователя</span>
+            </p>
+            <p class="text-xs tg-text-hint mt-0.5">Полное управление настройками, расписанием, ДЗ и правами</p>
+          </div>
+          <button id="adminLogoutBtn" type="button" class="px-3 py-1.5 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 text-xs font-semibold shrink-0">Выйти</button>
+        </div>
+
+        <!-- Admin Sub-navigation -->
+        <div class="grid grid-cols-4 gap-1.5">
+          <button data-admin-sub="general" class="admin-sub-btn py-2 px-2 rounded-xl text-xs font-semibold tg-btn-primary text-center">Общее</button>
+          <button data-admin-sub="schedule" class="admin-sub-btn py-2 px-2 rounded-xl text-xs font-medium tg-surface text-center">Пары</button>
+          <button data-admin-sub="subjects" class="admin-sub-btn py-2 px-2 rounded-xl text-xs font-medium tg-surface text-center">Предметы</button>
+          <button data-admin-sub="access" class="admin-sub-btn py-2 px-2 rounded-xl text-xs font-medium tg-surface text-center">Доступ</button>
+        </div>
+
+        <!-- Admin Sub 1: General App Settings -->
+        <div id="admin-sub-general" class="space-y-3">
+          <div class="p-4 rounded-2xl tg-surface shadow-sm space-y-3">
+            <h3 class="text-sm font-bold">Настройки приложения</h3>
+            <div>
+              <label class="block text-xs font-medium tg-text-hint mb-1">Название группы / класса</label>
+              <input id="adminGroupNameInput" type="text" class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border" style="border-color: var(--tg-border);" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium tg-text-hint mb-1">Подзаголовок (вуз / школа / курс)</label>
+              <input id="adminSubtitleInput" type="text" placeholder="Например: 2 курс, Программная инженерия" class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border" style="border-color: var(--tg-border);" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium tg-text-hint mb-1">Закреплённое объявление для всех</label>
+              <textarea id="adminAnnouncementInput" rows="2" placeholder="Например: В пятницу пара перенесена в 402 ауд." class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-xs outline-none border resize-none" style="border-color: var(--tg-border);"></textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-medium tg-text-hint mb-1.5">Акцентный цвет интерфейса</label>
+              <div id="accentColorPicker" class="flex gap-2 flex-wrap">
+                <button data-accent="#2481cc" type="button" class="accent-dot w-8 h-8 rounded-full border-2 border-transparent" style="background:#2481cc;" title="Telegram Синий"></button>
+                <button data-accent="#10b981" type="button" class="accent-dot w-8 h-8 rounded-full border-2 border-transparent" style="background:#10b981;" title="Изумрудный"></button>
+                <button data-accent="#8b5cf6" type="button" class="accent-dot w-8 h-8 rounded-full border-2 border-transparent" style="background:#8b5cf6;" title="Фиолетовый"></button>
+                <button data-accent="#f59e0b" type="button" class="accent-dot w-8 h-8 rounded-full border-2 border-transparent" style="background:#f59e0b;" title="Янтарный"></button>
+                <button data-accent="#ec4899" type="button" class="accent-dot w-8 h-8 rounded-full border-2 border-transparent" style="background:#ec4899;" title="Розовый"></button>
+              </div>
+            </div>
+            <div class="pt-1 space-y-2.5 border-t" style="border-color: var(--tg-border);">
+              <label class="flex items-center justify-between gap-3 cursor-pointer pt-1">
+                <div>
+                  <p class="text-xs font-semibold">Показывать субботу в расписании</p>
+                  <p class="text-[11px] tg-text-hint">Скрыть, если у группы 5-дневка</p>
+                </div>
+                <input id="adminShowSaturdayToggle" type="checkbox" class="w-4 h-4 accent-blue-600" />
+              </label>
+              <label class="flex items-center justify-between gap-3 cursor-pointer">
+                <div>
+                  <p class="text-xs font-semibold">Разрешить ученикам редактирование</p>
+                  <p class="text-[11px] tg-text-hint">Если выключено, менять пары и ДЗ может только админ</p>
+                </div>
+                <input id="adminAllowStudentEditToggle" type="checkbox" class="w-4 h-4 accent-blue-600" />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin Sub 2: Bulk Schedule Manager -->
+        <div id="admin-sub-schedule" class="hidden space-y-3">
+          <div class="p-4 rounded-2xl tg-surface shadow-sm space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold">Все пары (<span id="adminLessonsCount">0</span>)</h3>
+              <div class="flex gap-1.5">
+                <button id="adminAddLessonBtn" type="button" class="px-2.5 py-1.5 rounded-xl tg-btn-primary text-xs font-semibold flex items-center gap-1">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                  <span>Пара</span>
+                </button>
+                <button id="adminClearLessonsBtn" type="button" class="px-2.5 py-1.5 rounded-xl bg-red-500/10 text-red-500 text-xs font-semibold">Очистить</button>
+              </div>
+            </div>
+            <div id="adminLessonsList" class="space-y-2 max-h-[55vh] overflow-y-auto"></div>
+          </div>
+        </div>
+
+        <!-- Admin Sub 3: Subjects & Homework Bulk Manager -->
+        <div id="admin-sub-subjects" class="hidden space-y-3">
+          <div class="p-4 rounded-2xl tg-surface shadow-sm space-y-3">
+            <div>
+              <h3 class="text-sm font-bold">Справочник предметов</h3>
+              <p class="text-[11px] tg-text-hint">Переименование обновит предмет сразу во всех парах и ДЗ</p>
+            </div>
+            <div id="adminSubjectsList" class="space-y-2"></div>
+          </div>
+          <div class="p-4 rounded-2xl tg-surface shadow-sm space-y-2.5">
+            <h3 class="text-sm font-bold">Массовые действия с ДЗ</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <button id="adminMarkAllDoneBtn" type="button" class="py-2 px-3 rounded-xl tg-bg-secondary border text-xs font-semibold" style="border-color: var(--tg-border);">Отметить все сданы</button>
+              <button id="adminClearDoneHwBtn" type="button" class="py-2 px-3 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-semibold">Удалить сданные</button>
+              <button id="adminClearAllHwBtn" type="button" class="py-2 px-3 rounded-xl bg-red-500/10 text-red-500 text-xs font-semibold">Удалить все ДЗ</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin Sub 4: Access & Security -->
+        <div id="admin-sub-access" class="hidden space-y-3">
+          <div class="p-4 rounded-2xl tg-surface shadow-sm space-y-3">
+            <h3 class="text-sm font-bold">Доступ супер-пользователя</h3>
+            <div>
+              <label class="block text-xs font-medium tg-text-hint mb-1">PIN-код администратора</label>
+              <div class="flex gap-2">
+                <input id="adminPinInput" type="text" maxlength="12" placeholder="0000" class="flex-1 px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border" style="border-color: var(--tg-border);" />
+                <button id="adminSavePinBtn" type="button" class="px-4 py-2 rounded-xl tg-btn-primary text-xs font-semibold">Обновить</button>
+              </div>
+              <p class="text-[11px] tg-text-hint mt-1">Текущий PIN по умолчанию: 0000</p>
+            </div>
+            <div>
+              <label class="block text-xs font-medium tg-text-hint mb-1">Telegram ID / @username админов (через запятую)</label>
+              <input id="adminIdsInput" type="text" placeholder="123456789, @starosta" class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-xs outline-none border" style="border-color: var(--tg-border);" />
+              <p class="text-[11px] tg-text-hint mt-1">Указанные пользователи входят в админку автоматически в Telegram</p>
+            </div>
+            <div class="pt-2 border-t flex items-center justify-between gap-2" style="border-color: var(--tg-border);">
+              <span class="text-xs tg-text-hint">Полный сброс всех данных и настроек</span>
+              <button id="adminFactoryResetBtn" type="button" class="px-3 py-1.5 rounded-xl bg-red-500/10 text-red-500 text-xs font-semibold">Сброс к демо</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 z-30 tg-bg-main border-t" style="border-color: var(--tg-border);">
+      <div id="bottomNavGrid" class="max-w-xl mx-auto grid grid-cols-3 h-16">
+        <button data-tab="schedule" class="nav-tab-btn flex flex-col items-center justify-center gap-0.5 text-xs font-semibold" style="color: var(--tg-btn);">
+          <i data-lucide="calendar" class="w-5 h-5"></i>
+          <span>Расписание</span>
+        </button>
+        <button data-tab="homework" class="nav-tab-btn flex flex-col items-center justify-center gap-0.5 text-xs font-medium tg-text-hint relative">
+          <div class="relative">
+            <i data-lucide="book-open-check" class="w-5 h-5"></i>
+            <span id="navHwBadge" class="hidden absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">0</span>
+          </div>
+          <span>Домашка</span>
+        </button>
+        <button data-tab="share" class="nav-tab-btn flex flex-col items-center justify-center gap-0.5 text-xs font-medium tg-text-hint">
+          <i data-lucide="share-2" class="w-5 h-5"></i>
+          <span>Поделиться</span>
+        </button>
+        <button id="navAdminTabBtn" data-tab="admin" class="hidden nav-tab-btn flex flex-col items-center justify-center gap-0.5 text-xs font-medium tg-text-hint">
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
+          <span>Админка</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- MODAL: ADMIN LOGIN -->
+  <div id="adminAuthModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="w-full max-w-sm tg-bg-main rounded-t-3xl sm:rounded-3xl p-5 space-y-3.5 shadow-xl animate-slide-up">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold flex items-center gap-2">
+          <i data-lucide="shield" class="w-4 h-4 text-amber-500"></i>
+          <span>Вход для супер-пользователя</span>
+        </h3>
+        <button id="closeAdminAuthBtn" type="button" class="p-1.5 rounded-xl tg-bg-secondary">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <p class="text-xs tg-text-hint">Введите PIN-код администратора, чтобы открывать меню управления всем приложением. По умолчанию: <span class="font-bold">0000</span></p>
+      <form id="adminAuthForm" class="space-y-3">
+        <input id="adminAuthPinInput" type="password" inputmode="numeric" placeholder="Введите PIN (0000)" required class="w-full px-3 py-2.5 rounded-xl tg-bg-secondary text-sm outline-none border text-center tracking-widest font-bold" style="border-color: var(--tg-border);" />
+        <button type="submit" class="w-full py-2.5 rounded-xl tg-btn-primary text-sm font-semibold">Войти как админ</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: RENAME SUBJECT BULK -->
+  <div id="renameSubjectModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="w-full max-w-sm tg-bg-main rounded-t-3xl sm:rounded-3xl p-5 space-y-3.5 shadow-xl animate-slide-up">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold">Переименовать предмет</h3>
+        <button id="closeRenameSubjectBtn" type="button" class="p-1.5 rounded-xl tg-bg-secondary">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <form id="renameSubjectForm" class="space-y-3">
+        <input type="hidden" id="oldSubjectNameInput" />
+        <div>
+          <label class="block text-xs font-medium tg-text-hint mb-1">Новое название</label>
+          <input id="newSubjectNameInput" type="text" required class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border" style="border-color: var(--tg-border);" />
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl tg-btn-primary text-sm font-semibold">Применить ко всем парам и ДЗ</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT LESSON -->
+  <div id="lessonModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="w-full max-w-md tg-bg-main rounded-t-3xl sm:rounded-3xl p-5 space-y-3.5 shadow-xl animate-slide-up max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <h3 id="lessonModalTitle" class="text-base font-bold">Новая пара</h3>
+        <button id="closeLessonModalBtn" type="button" class="p-1.5 rounded-xl tg-bg-secondary">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <form id="lessonForm" class="space-y-3">
+        <input type="hidden" id="lessonIdInput" />
+        <div>
+          <label class="block text-xs font-medium tg-text-hint mb-1">Предмет *</label>
+          <input id="lessonSubjectInput" type="text" required placeholder="Например: Высшая математика" class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border" style="border-color: var(--tg-border);" />
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs font-medium tg-text-hint mb-1">День недели</label>
+            <select id="lessonDayInput" class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border" style="border-color: var(--tg-border);">
+              <option value="0">Понедельник</option>
+              <option value="1">Вторник</option>
+              <option value="2">Среда</option>
+              <option value="3">Четверг</option>
+              <option value="4">Пятница</option>
+              <option value="5">Суббота</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium tg-text-hint mb-1">Тип занятия</label>
+            <select id="lessonTypeInput" class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border" style="border-color: var(--tg-border);">
+              <option value="Лекция">Лекция</option>
+              <option value="Практика">Практика</option>
+              <option value="Лаба">Лаба</option>
+              <option value="Семинар">Семинар</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs font-medium tg-text-hint mb-1">Начало *</label>
+            <input id="lessonStartInput" type="time" required value="09:00" class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border" style="border-color: var(--tg-border);" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium tg-text-hint mb-1">Конец *</label>
+            <input id="lessonEndInput" type="time" required value="10:30" class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border" style="border-color: var(--tg-border);" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs font-medium tg-text-hint mb-1">Кабинет / Ссылка</label>
+            <input id="lessonRoomInput" type="text" placeholder="Ауд. 304 / Zoom" class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border" style="border-color: var(--tg-border);" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium tg-text-hint mb-1">Преподаватель</label>
+            <input id="lessonTeacherInput" type="text" placeholder="Иванов И.И." class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border" style="border-color: var(--tg-border);" />
+          </div>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button id="deleteLessonBtn" type="button" class="hidden px-4 py-2.5 rounded-xl bg-red-500/10 text-red-500 text-xs font-semibold">Удалить</button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl tg-btn-primary text-sm font-semibold">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT HOMEWORK -->
+  <div id="hwModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="w-full max-w-md tg-bg-main rounded-t-3xl sm:rounded-3xl p-5 space-y-3.5 shadow-xl animate-slide-up max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <h3 id="hwModalTitle" class="text-base font-bold">Новое задание</h3>
+        <button id="closeHwModalBtn" type="button" class="p-1.5 rounded-xl tg-bg-secondary">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <form id="hwForm" class="space-y-3">
+        <input type="hidden" id="hwIdInput" />
+        <div>
+          <label class="block text-xs font-medium tg-text-hint mb-1">Предмет *</label>
+          <input id="hwSubjectInput" list="subjectsDatalist" type="text" required placeholder="Выберите или введите предмет" class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border" style="border-color: var(--tg-border);" />
+          <datalist id="subjectsDatalist"></datalist>
+        </div>
+        <div>
+          <label class="block text-xs font-medium tg-text-hint mb-1">Что нужно сделать *</label>
+          <textarea id="hwTextInput" rows="3" required placeholder="Например: Решить задачи №12–18 из сборника, сдать в PDF" class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border resize-none" style="border-color: var(--tg-border);"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs font-medium tg-text-hint mb-1">Срок сдачи *</label>
+            <input id="hwDeadlineInput" type="date" required class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border" style="border-color: var(--tg-border);" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium tg-text-hint mb-1">Приоритет</label>
+            <select id="hwPriorityInput" class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border" style="border-color: var(--tg-border);">
+              <option value="normal">Обычное</option>
+              <option value="high">Важное</option>
+              <option value="urgent">Срочно</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium tg-text-hint mb-1">Ссылка на материалы (необязательно)</label>
+          <input id="hwLinkInput" type="url" placeholder="https://..." class="w-full px-3 py-2 rounded-xl tg-bg-secondary text-sm outline-none border" style="border-color: var(--tg-border);" />
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button id="deleteHwBtn" type="button" class="hidden px-4 py-2.5 rounded-xl bg-red-500/10 text-red-500 text-xs font-semibold">Удалить</button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl tg-btn-primary text-sm font-semibold">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="hidden fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-zinc-900 text-white text-xs font-medium shadow-lg pointer-events-none whitespace-nowrap"></div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = 'tg_study_miniapp_v1';
+      const ADMIN_SESSION_KEY = 'tg_study_admin_session_v1';
+      const DAYS_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+      const DAYS_FULL = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+      const TYPE_BADGES = {
+        'Лекция': 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+        'Практика': 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+        'Лаба': 'bg-purple-500/15 text-purple-600 dark:text-purple-400',
+        'Семинар': 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+      };
+
+      function getOffsetDate(days) {
+        const d = new Date();
+        d.setDate(d.getDate() + days);
+        return d.toISOString().slice(0, 10);
+      }
+
+      function getDefaultSettings() {
+        return {
+          subtitleText: '',
+          announcement: '',
+          accentColor: '#2481cc',
+          showSaturday: true,
+          allowStudentEdit: true,
+          adminPin: '0000',
+          adminIds: ''
+        };
+      }
+
+      function getDefaultState() {
+        return {
+          groupName: 'ИТ-201',
+          settings: getDefaultSettings(),
+          lessons: [
+            { id: 'l1', day: 0, start: '09:00', end: '10:30', subject: 'Математический анализ', type: 'Лекция', room: 'Ауд. 305', teacher: 'Смирнова Е.В.' },
+            { id: 'l2', day: 0, start: '10:45', end: '12:15', subject: 'Алгоритмы и структуры данных', type: 'Практика', room: 'К-12', teacher: 'Волков А.Д.' },
+            { id: 'l3', day: 1, start: '09:00', end: '10:30', subject: 'Базы данных', type: 'Лаба', room: 'Лаб. 204', teacher: 'Орлов К.С.' },
+            { id: 'l4', day: 1, start: '12:30', end: '14:00', subject: 'Английский язык', type: 'Семинар', room: 'Ауд. 112', teacher: 'Petrova M.' },
+            { id: 'l5', day: 2, start: '10:45', end: '12:15', subject: 'Веб-разработка', type: 'Практика', room: 'Коворкинг 2', teacher: 'Лебедев И.А.' },
+            { id: 'l6', day: 3, start: '09:00', end: '10:30', subject: 'Математический анализ', type: 'Практика', room: 'Ауд. 210', teacher: 'Смирнова Е.В.' },
+            { id: 'l7', day: 4, start: '10:45', end: '12:15', subject: 'Операционные системы', type: 'Лекция', room: 'Потоковая 1', teacher: 'Громов В.Н.' }
+          ],
+          homeworks: [
+            { id: 'h1', subject: 'Алгоритмы и структуры данных', text: 'Реализовать бинарное дерево поиска и сдать тесты в Git', deadline: getOffsetDate(1), priority: 'urgent', link: '', done: false },
+            { id: 'h2', subject: 'Математический анализ', text: 'Номера 14.2, 14.5, 14.8 — интегралы по частям', deadline: getOffsetDate(2), priority: 'high', link: '', done: false },
+            { id: 'h3', subject: 'Базы данных', text: 'Спроектировать ER-диаграмму для интернет-магазина', deadline: getOffsetDate(4), priority: 'normal', link: '', done: false },
+            { id: 'h4', subject: 'Английский язык', text: 'Подготовить 5-минутный питч про свой пет-проект', deadline: getOffsetDate(0), priority: 'urgent', link: '', done: true }
+          ]
+        };
+      }
+
+      const jsDay = new Date().getDay();
+      const todayIndex = jsDay === 0 ? 0 : Math.min(jsDay - 1, 5);
+
+      let state = loadState();
+      let isAdmin = loadAdminSession();
+      let activeTab = 'schedule';
+      let adminSubTab = 'general';
+      let selectedDay = todayIndex;
+      let isWeekView = false;
+      let hwFilter = 'active';
+      let hwSearch = '';
+      let shareScope = 'all';
+      let pendingImportPayload = null;
+      let toastTimer = null;
+
+      const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+      function initTelegram() {
+        if (!tg) return;
+        try {
+          tg.ready();
+          tg.expand();
+          if (tg.colorScheme === 'dark') {
+            document.documentElement.classList.add('dark');
+          }
+          tg.onEvent('themeChanged', function () {
+            if (tg.colorScheme === 'dark') {
+              document.documentElement.classList.add('dark');
+            } else {
+              document.documentElement.classList.remove('dark');
+            }
+            updateThemeIcon();
+          });
+          // Auto-unlock admin if Telegram user ID or username is listed in adminIds
+          const tgUser = tg.initDataUnsafe && tg.initDataUnsafe.user;
+          if (tgUser && state.settings.adminIds) {
+            const list = state.settings.adminIds.split(',').map(s => s.trim().toLowerCase().replace(/^@/, '')).filter(Boolean);
+            const uid = String(tgUser.id || '');
+            const uname = String(tgUser.username || '').toLowerCase();
+            if (list.includes(uid) || (uname && list.includes(uname))) {
+              isAdmin = true;
+              saveAdminSession(true);
+            }
+          }
+        } catch (e) { /* safe fallback */ }
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && Array.isArray(parsed.lessons) && Array.isArray(parsed.homeworks)) {
+              parsed.settings = { ...getDefaultSettings(), ...(parsed.settings || {}) };
+              return parsed;
+            }
+          }
+        } catch (e) { /* ignore */ }
+        return getDefaultState();
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) { /* ignore */ }
+        if (tg && tg.CloudStorage) {
+          try {
+            tg.CloudStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          } catch (e) { /* ignore */ }
+        }
+      }
+
+      function loadAdminSession() {
+        try {
+          return localStorage.getItem(ADMIN_SESSION_KEY) === '1';
+        } catch (e) { return false; }
+      }
+
+      function saveAdminSession(val) {
+        try {
+          localStorage.setItem(ADMIN_SESSION_KEY, val ? '1' : '0');
+        } catch (e) { /* ignore */ }
+      }
+
+      function canEditContent() {
+        return isAdmin || state.settings.allowStudentEdit !== false;
+      }
+
+      function applyAccentColor() {
+        const color = (state.settings && state.settings.accentColor) || '#2481cc';
+        document.documentElement.style.setProperty('--tg-btn', color);
+        document.documentElement.style.setProperty('--tg-link', color);
+      }
+
+      function encodePayload(obj) {
+        const json = JSON.stringify(obj);
+        const bytes = new TextEncoder().encode(json);
+        let bin = '';
+        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+        return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      }
+
+      function decodePayload(str) {
+        let s = str.trim();
+        if (s.includes('#share=')) s = s.split('#share=')[1].split('&')[0];
+        else if (s.includes('startapp=')) s = s.split('startapp=')[1].split('&')[0];
+        if (s.startsWith('{')) return JSON.parse(s);
+        s = s.replace(/-/g, '+').replace(/_/g, '/');
+        while (s.length % 4) s += '=';
+        const bin = atob(s);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return JSON.parse(new TextDecoder().decode(bytes));
+      }
+
+      function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.remove('hidden');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.add('hidden'), 2400);
+      }
+
+      function copyToClipboard(text, successMsg) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => showToast(successMsg)).catch(() => fallbackCopy(text, successMsg));
+        } else {
+          fallbackCopy(text, successMsg);
+        }
+      }
+
+      function fallbackCopy(text, successMsg) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+          showToast(successMsg);
+        } catch (e) {
+          showToast('Не удалось скопировать');
+        }
+        document.body.removeChild(ta);
+      }
+
+      function formatDateRu(iso) {
+        if (!iso) return 'Без срока';
+        const [y, m, d] = iso.split('-').map(Number);
+        const target = new Date(y, m - 1, d);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const diff = Math.round((target - today) / 86400000);
+        if (diff === 0) return 'Сегодня';
+        if (diff === 1) return 'Завтра';
+        if (diff === -1) return 'Вчера';
+        const months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+        return `${d} ${months[m - 1]}`;
+      }
+
+      function isUrgentOrOverdue(hw) {
+        if (hw.done) return false;
+        if (hw.priority === 'urgent') return true;
+        if (!hw.deadline) return false;
+        const [y, m, d] = hw.deadline.split('-').map(Number);
+        const target = new Date(y, m - 1, d);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const diff = Math.round((target - today) / 86400000);
+        return diff <= 1;
+      }
+
+      function escapeHtml(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function renderHeader() {
+        applyAccentColor();
+        const activeHw = state.homeworks.filter(h => !h.done).length;
+        const userFirst = tg?.initDataUnsafe?.user?.first_name;
+        document.getElementById('headerTitle').textContent = state.groupName ? `Группа ${state.groupName}` : 'Учёба и ДЗ';
+        const subCustom = state.settings.subtitleText ? state.settings.subtitleText + ' • ' : '';
+        document.getElementById('headerSubtitle').textContent = userFirst
+          ? `${subCustom}${userFirst} • ДЗ: ${activeHw}`
+          : `${subCustom}Активных ДЗ: ${activeHw} • пар: ${state.lessons.length}`;
+
+        document.getElementById('adminBadge').classList.toggle('hidden', !isAdmin);
+        const adminBtn = document.getElementById('adminToggleBtn');
+        adminBtn.classList.toggle('text-amber-500', isAdmin);
+        document.getElementById('adminIcon').setAttribute('data-lucide', isAdmin ? 'shield-check' : 'shield');
+
+        // Announcement banner
+        const ann = (state.settings.announcement || '').trim();
+        const annBanner = document.getElementById('announcementBanner');
+        if (ann) {
+          document.getElementById('announcementText').textContent = ann;
+          annBanner.classList.remove('hidden');
+        } else {
+          annBanner.classList.add('hidden');
+        }
+
+        // Nav grid & Admin tab visibility
+        const navGrid = document.getElementById('bottomNavGrid');
+        const navAdminBtn = document.getElementById('navAdminTabBtn');
+        navAdminBtn.classList.toggle('hidden', !isAdmin);
+        navGrid.classList.toggle('grid-cols-4', isAdmin);
+        navGrid.classList.toggle('grid-cols-3', !isAdmin);
+
+        // Permissions on Add buttons
+        const editable = canEditContent();
+        document.getElementById('addLessonBtn').classList.toggle('hidden', !editable);
+        document.getElementById('addHwBtn').classList.toggle('hidden', !editable);
+
+        const badge = document.getElementById('navHwBadge');
+        if (activeHw > 0) {
+          badge.textContent = activeHw;
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+
+      function renderDayTabs() {
+        const maxDays = state.settings.showSaturday === false ? 5 : 6;
+        if (selectedDay >= maxDays) selectedDay = 0;
+        const container = document.getElementById('dayTabs');
+        container.innerHTML = DAYS_SHORT.slice(0, maxDays).map((name, idx) => {
+          const count = state.lessons.filter(l => l.day === idx).length;
+          const isSelected = !isWeekView && selectedDay === idx;
+          const isToday = idx === todayIndex;
+          return `
+            <button data-day="${idx}" type="button" class="day-tab-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center gap-1.5 ${
+              isSelected ? 'tg-btn-primary shadow-sm' : 'tg-surface'
+            }">
+              <span>${name}</span>
+              ${isToday ? '<span class="w-1.5 h-1.5 rounded-full ' + (isSelected ? 'bg-white' : 'bg-blue-500') + '"></span>' : ''}
+              ${count > 0 ? `<span class="opacity-70 text-[10px]">(${count})</span>` : ''}
+            </button>
+          `;
+        }).join('');
+
+        container.querySelectorAll('.day-tab-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            isWeekView = false;
+            selectedDay = Number(btn.dataset.day);
+            renderSchedule();
+          });
+        });
+      }
+
+      function renderLessonCard(lesson) {
+        const activeHws = state.homeworks.filter(h => !h.done && h.subject.toLowerCase() === lesson.subject.toLowerCase());
+        const badgeCls = TYPE_BADGES[lesson.type] || 'bg-zinc-500/15 text-zinc-500';
+        const editable = canEditContent();
+        return `
+          <div class="p-3.5 rounded-2xl tg-surface shadow-sm space-y-2 transition">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-xs font-bold tabular-nums" style="color: var(--tg-link);">${escapeHtml(lesson.start)} – ${escapeHtml(lesson.end)}</span>
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold ${badgeCls}">${escapeHtml(lesson.type)}</span>
+                </div>
+                <h3 class="text-sm font-bold mt-1 leading-snug">${escapeHtml(lesson.subject)}</h3>
+                <div class="flex items-center gap-3 mt-1 text-xs tg-text-hint flex-wrap">
+                  ${lesson.room ? `<span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i>${escapeHtml(lesson.room)}</span>` : ''}
+                  ${lesson.teacher ? `<span class="flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i>${escapeHtml(lesson.teacher)}</span>` : ''}
+                </div>
+              </div>
+              ${editable ? `
+              <div class="flex items-center gap-1 shrink-0">
+                <button data-quick-hw="${escapeHtml(lesson.subject)}" type="button" title="Добавить ДЗ" class="p-1.5 rounded-xl tg-bg-secondary hover:opacity-80 text-xs font-semibold flex items-center gap-1">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                  <span class="text-[11px]">ДЗ</span>
+                </button>
+                <button data-edit-lesson="${lesson.id}" type="button" title="Редактировать" class="p-1.5 rounded-xl tg-bg-secondary hover:opacity-80">
+                  <i data-lucide="pencil" class="w-3.5 h-3.5 tg-text-hint"></i>
+                </button>
+              </div>` : ''}
+            </div>
+            ${activeHws.length > 0 ? `
+              <div class="pt-2 border-t space-y-1" style="border-color: var(--tg-border);">
+                ${activeHws.map(hw => `
+                  <div class="flex items-center justify-between gap-2 text-xs">
+                    <span class="truncate"><span class="font-semibold" style="color: var(--tg-link);">ДЗ:</span> ${escapeHtml(hw.text)}</span>
+                    <span class="shrink-0 text-[11px] tg-text-hint">${formatDateRu(hw.deadline)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      function renderSchedule() {
+        renderDayTabs();
+        document.getElementById('weekViewLabel').textContent = isWeekView ? 'По дням' : 'Неделя';
+        const container = document.getElementById('lessonsContainer');
+        const maxDays = state.settings.showSaturday === false ? 5 : 6;
+
+        if (isWeekView) {
+          document.getElementById('selectedDayTitle').textContent = 'Вся неделя';
+          document.getElementById('selectedDayMeta').textContent = `Всего пар: ${state.lessons.length}`;
+          let html = '';
+          DAYS_FULL.slice(0, maxDays).forEach((dayName, idx) => {
+            const dayLessons = state.lessons.filter(l => l.day === idx).sort((a, b) => a.start.localeCompare(b.start));
+            if (dayLessons.length > 0) {
+              html += `<div class="space-y-2"><h3 class="text-xs font-bold uppercase tracking-wider tg-text-hint pt-1">${dayName}</h3>`;
+              html += dayLessons.map(renderLessonCard).join('');
+              html += `</div>`;
+            }
+          });
+          container.innerHTML = html || emptyStateHtml('calendar-x', 'Расписание пустое', 'Добавьте первую пару или загрузите по ссылке');
+        } else {
+          const dayLessons = state.lessons.filter(l => l.day === selectedDay).sort((a, b) => a.start.localeCompare(b.start));
+          document.getElementById('selectedDayTitle').textContent = DAYS_FULL[selectedDay] + (selectedDay === todayIndex ? ' (сегодня)' : '');
+          document.getElementById('selectedDayMeta').textContent = dayLessons.length ? `Пар: ${dayLessons.length}` : 'Выходной / пар нет';
+          container.innerHTML = dayLessons.length
+            ? dayLessons.map(renderLessonCard).join('')
+            : emptyStateHtml('coffee', 'Пар на этот день нет', 'Отличный день для отдыха или закрытия ДЗ');
+        }
+
+        container.querySelectorAll('[data-edit-lesson]').forEach(btn => {
+          btn.addEventListener('click', () => openLessonModal(btn.dataset.editLesson));
+        });
+        container.querySelectorAll('[data-quick-hw]').forEach(btn => {
+          btn.addEventListener('click', () => openHwModal(null, btn.dataset.quickHw));
+        });
+        lucide.createIcons();
+      }
+
+      function renderHomework() {
+        const total = state.homeworks.length;
+        const doneCount = state.homeworks.filter(h => h.done).length;
+        const pct = total ? Math.round((doneCount / total) * 100) : 0;
+        document.getElementById('hwProgressText').textContent = `${doneCount} из ${total} выполнено`;
+        document.getElementById('hwProgressBar').style.width = `${pct}%`;
+
+        document.querySelectorAll('.hw-filter-btn').forEach(btn => {
+          const active = btn.dataset.filter === hwFilter;
+          btn.className = `hw-filter-btn px-3 py-1.5 rounded-xl text-xs transition shrink-0 ${
+            active ? 'font-semibold tg-btn-primary' : 'font-medium tg-surface'
+          }`;
+        });
+
+        let list = state.homeworks.slice();
+        if (hwFilter === 'active') list = list.filter(h => !h.done);
+        else if (hwFilter === 'done') list = list.filter(h => h.done);
+        else if (hwFilter === 'urgent') list = list.filter(h => isUrgentOrOverdue(h));
+
+        if (hwSearch.trim()) {
+          const q = hwSearch.trim().toLowerCase();
+          list = list.filter(h => h.subject.toLowerCase().includes(q) || h.text.toLowerCase().includes(q));
+        }
+
+        list.sort((a, b) => {
+          if (a.done !== b.done) return a.done ? 1 : -1;
+          return (a.deadline || '9999').localeCompare(b.deadline || '9999');
+        });
+
+        const editable = canEditContent();
+        const container = document.getElementById('homeworkContainer');
+        if (!list.length) {
+          container.innerHTML = emptyStateHtml('check-circle-2', 'Заданий нет', hwFilter === 'active' ? 'Все актуальные задания выполнены!' : 'Попробуйте изменить фильтр');
+          lucide.createIcons();
+          return;
+        }
+
+        container.innerHTML = list.map(hw => {
+          const urgent = isUrgentOrOverdue(hw);
+          const priorityBadge = hw.priority === 'urgent'
+            ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-500/15 text-red-500">Срочно</span>'
+            : hw.priority === 'high'
+              ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-500">Важно</span>'
+              : '';
+
+          return `
+            <div class="p-3.5 rounded-2xl tg-surface shadow-sm flex items-start gap-3 transition ${hw.done ? 'opacity-60' : ''}">
+              <button data-toggle-hw="${hw.id}" type="button" class="mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition ${
+                hw.done ? 'tg-btn-primary border-transparent' : 'tg-bg-secondary'
+              }" style="${hw.done ? '' : 'border-color: var(--tg-hint);'}">
+                ${hw.done ? '<i data-lucide="check" class="w-3.5 h-3.5"></i>' : ''}
+              </button>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs font-bold truncate" style="color: var(--tg-link);">${escapeHtml(hw.subject)}</span>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    ${priorityBadge}
+                    <span class="text-[11px] font-medium ${urgent && !hw.done ? 'text-red-500 font-semibold' : 'tg-text-hint'}">${formatDateRu(hw.deadline)}</span>
+                  </div>
+                </div>
+                <p class="text-sm mt-1 leading-snug ${hw.done ? 'line-through' : ''}">${escapeHtml(hw.text)}</p>
+                ${hw.link ? `<a href="${escapeHtml(hw.link)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-xs mt-1.5 underline" style="color: var(--tg-link);"><i data-lucide="external-link" class="w-3 h-3"></i>Материалы</a>` : ''}
+              </div>
+              ${editable ? `
+              <button data-edit-hw="${hw.id}" type="button" class="p-1.5 rounded-xl tg-bg-secondary hover:opacity-80 shrink-0">
+                <i data-lucide="pencil" class="w-3.5 h-3.5 tg-text-hint"></i>
+              </button>` : ''}
+            </div>
+          `;
+        }).join('');
+
+        container.querySelectorAll('[data-toggle-hw]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const item = state.homeworks.find(h => h.id === btn.dataset.toggleHw);
+            if (item) {
+              item.done = !item.done;
+              saveState();
+              renderAll();
+            }
+          });
+        });
+
+        container.querySelectorAll('[data-edit-hw]').forEach(btn => {
+          btn.addEventListener('click', () => openHwModal(btn.dataset.editHw));
+        });
+
+        lucide.createIcons();
+      }
+
+      function emptyStateHtml(icon, title, subtitle) {
+        return `
+          <div class="p-8 rounded-2xl tg-surface text-center space-y-1.5">
+            <div class="w-10 h-10 rounded-2xl tg-bg-secondary mx-auto flex items-center justify-center tg-text-hint">
+              <i data-lucide="${icon}" class="w-5 h-5"></i>
+            </div>
+            <p class="text-sm font-semibold">${title}</p>
+            <p class="text-xs tg-text-hint">${subtitle}</p>
+          </div>
+        `;
+      }
+
+      function buildSharePayload() {
+        const payload = {
+          groupName: state.groupName || 'Моя группа',
+          settings: {
+            subtitleText: state.settings.subtitleText || '',
+            announcement: state.settings.announcement || '',
+            accentColor: state.settings.accentColor || '#2481cc',
+            showSaturday: state.settings.showSaturday !== false,
+            allowStudentEdit: state.settings.allowStudentEdit !== false
+          }
+        };
+        if (shareScope === 'all' || shareScope === 'schedule') payload.lessons = state.lessons;
+        if (shareScope === 'all' || shareScope === 'homework') {
+          payload.homeworks = state.homeworks.filter(h => !h.done);
+        }
+        return payload;
+      }
+
+      function buildShareText() {
+        const title = state.groupName ? `📚 ${state.groupName}` : '📚 Учебное расписание';
+        const lines = [title];
+        if (state.settings.announcement) lines.push(`📢 ${state.settings.announcement}`);
+        if (shareScope === 'all' || shareScope === 'schedule') {
+          lines.push('\n🗓 Расписание:');
+          DAYS_FULL.forEach((d, idx) => {
+            const list = state.lessons.filter(l => l.day === idx).sort((a, b) => a.start.localeCompare(b.start));
+            if (list.length) {
+              lines.push(`${DAYS_SHORT[idx]}: ` + list.map(l => `${l.start} ${l.subject}${l.room ? ` (${l.room})` : ''}`).join(', '));
+            }
+          });
+        }
+        if (shareScope === 'all' || shareScope === 'homework') {
+          const active = state.homeworks.filter(h => !h.done);
+          lines.push('\n📝 Актуальное ДЗ:');
+          if (!active.length) lines.push('Все задания выполнены!');
+          else active.forEach(h => lines.push(`• ${h.subject} (${formatDateRu(h.deadline)}): ${h.text}`));
+        }
+        return lines.join('\n');
+      }
+
+      function buildShareUrl() {
+        const encoded = encodePayload(buildSharePayload());
+        const base = window.location.href.split('#')[0];
+        return `${base}#share=${encoded}`;
+      }
+
+      function renderShare() {
+        document.getElementById('groupNameInput').value = state.groupName || '';
+        document.querySelectorAll('.share-scope-btn').forEach(btn => {
+          const active = btn.dataset.shareScope === shareScope;
+          btn.className = `share-scope-btn py-2 px-2 rounded-xl text-xs text-center transition ${
+            active ? 'font-semibold tg-btn-primary' : 'font-medium tg-bg-secondary'
+          }`;
+        });
+        document.getElementById('shareTextPreview').textContent = buildShareText();
+      }
+
+      // Render Admin Panel
+      function renderAdmin() {
+        if (!isAdmin) {
+          switchTab('schedule');
+          return;
+        }
+        ['general', 'schedule', 'subjects', 'access'].forEach(sub => {
+          document.getElementById(`admin-sub-${sub}`).classList.toggle('hidden', sub !== adminSubTab);
+        });
+        document.querySelectorAll('.admin-sub-btn').forEach(btn => {
+          const active = btn.dataset.adminSub === adminSubTab;
+          btn.className = `admin-sub-btn py-2 px-2 rounded-xl text-xs text-center transition ${
+            active ? 'font-semibold tg-btn-primary' : 'font-medium tg-surface'
+          }`;
+        });
+
+        if (adminSubTab === 'general') {
+          document.getElementById('adminGroupNameInput').value = state.groupName || '';
+          document.getElementById('adminSubtitleInput').value = state.settings.subtitleText || '';
+          document.getElementById('adminAnnouncementInput').value = state.settings.announcement || '';
+          document.getElementById('adminShowSaturdayToggle').checked = state.settings.showSaturday !== false;
+          document.getElementById('adminAllowStudentEditToggle').checked = state.settings.allowStudentEdit !== false;
+          document.querySelectorAll('.accent-dot').forEach(dot => {
+            const isSel = dot.dataset.accent === (state.settings.accentColor || '#2481cc');
+            dot.style.borderColor = isSel ? 'var(--tg-text)' : 'transparent';
+            dot.style.transform = isSel ? 'scale(1.12)' : 'scale(1)';
+          });
+        } else if (adminSubTab === 'schedule') {
+          document.getElementById('adminLessonsCount').textContent = state.lessons.length;
+          const sorted = state.lessons.slice().sort((a, b) => a.day - b.day || a.start.localeCompare(b.start));
+          const listEl = document.getElementById('adminLessonsList');
+          listEl.innerHTML = sorted.length ? sorted.map(l => `
+            <div class="p-2.5 rounded-xl tg-bg-secondary flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <p class="text-xs font-bold truncate">${escapeHtml(l.subject)}</p>
+                <p class="text-[11px] tg-text-hint">${DAYS_SHORT[l.day]} • ${escapeHtml(l.start)}–${escapeHtml(l.end)} ${l.room ? '• ' + escapeHtml(l.room) : ''}</p>
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                <button data-admin-dup-lesson="${l.id}" type="button" title="Дублировать" class="p-1.5 rounded-lg tg-surface hover:opacity-80">
+                  <i data-lucide="copy" class="w-3.5 h-3.5 tg-text-hint"></i>
+                </button>
+                <button data-admin-edit-lesson="${l.id}" type="button" title="Изменить" class="p-1.5 rounded-lg tg-surface hover:opacity-80">
+                  <i data-lucide="pencil" class="w-3.5 h-3.5 tg-text-hint"></i>
+                </button>
+                <button data-admin-del-lesson="${l.id}" type="button" title="Удалить" class="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:opacity-80">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+          `).join('') : '<p class="text-xs tg-text-hint text-center py-4">Список пар пуст</p>';
+
+          listEl.querySelectorAll('[data-admin-edit-lesson]').forEach(b => b.addEventListener('click', () => openLessonModal(b.dataset.adminEditLesson)));
+          listEl.querySelectorAll('[data-admin-dup-lesson]').forEach(b => b.addEventListener('click', () => {
+            const orig = state.lessons.find(x => x.id === b.dataset.adminDupLesson);
+            if (!orig) return;
+            state.lessons.push({ ...orig, id: 'l_' + Date.now() });
+            saveState();
+            renderAll();
+            showToast('Пара дублирована');
+          }));
+          listEl.querySelectorAll('[data-admin-del-lesson]').forEach(b => b.addEventListener('click', () => {
+            state.lessons = state.lessons.filter(x => x.id !== b.dataset.adminDelLesson);
+            saveState();
+            renderAll();
+            showToast('Пара удалена');
+          }));
+        } else if (adminSubTab === 'subjects') {
+          const subjectsMap = new Map();
+          state.lessons.forEach(l => {
+            const cur = subjectsMap.get(l.subject) || { lessons: 0, hws: 0 };
+            cur.lessons += 1;
+            subjectsMap.set(l.subject, cur);
+          });
+          state.homeworks.forEach(h => {
+            const cur = subjectsMap.get(h.subject) || { lessons: 0, hws: 0 };
+            cur.hws += 1;
+            subjectsMap.set(h.subject, cur);
+          });
+          const subEl = document.getElementById('adminSubjectsList');
+          subEl.innerHTML = subjectsMap.size ? [...subjectsMap.entries()].map(([name, counts]) => `
+            <div class="p-2.5 rounded-xl tg-bg-secondary flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <p class="text-xs font-bold truncate">${escapeHtml(name)}</p>
+                <p class="text-[11px] tg-text-hint">Пар: ${counts.lessons} • ДЗ: ${counts.hws}</p>
+              </div>
+              <button data-rename-subject="${escapeHtml(name)}" type="button" class="px-2.5 py-1.5 rounded-lg tg-surface text-xs font-semibold shrink-0">Переименовать</button>
+            </div>
+          `).join('') : '<p class="text-xs tg-text-hint text-center py-3">Предметов пока нет</p>';
+
+          subEl.querySelectorAll('[data-rename-subject]').forEach(b => b.addEventListener('click', () => {
+            document.getElementById('oldSubjectNameInput').value = b.dataset.renameSubject;
+            document.getElementById('newSubjectNameInput').value = b.dataset.renameSubject;
+            document.getElementById('renameSubjectModal').classList.remove('hidden');
+          }));
+        } else if (adminSubTab === 'access') {
+          document.getElementById('adminPinInput').value = state.settings.adminPin || '0000';
+          document.getElementById('adminIdsInput').value = state.settings.adminIds || '';
+        }
+
+        lucide.createIcons();
+      }
+
+      // Modals
+      function openLessonModal(id = null) {
+        const modal = document.getElementById('lessonModal');
+        const delBtn = document.getElementById('deleteLessonBtn');
+        if (id) {
+          const l = state.lessons.find(x => x.id === id);
+          if (!l) return;
+          document.getElementById('lessonModalTitle').textContent = 'Редактировать пару';
+          document.getElementById('lessonIdInput').value = l.id;
+          document.getElementById('lessonSubjectInput').value = l.subject;
+          document.getElementById('lessonDayInput').value = String(l.day);
+          document.getElementById('lessonTypeInput').value = l.type;
+          document.getElementById('lessonStartInput').value = l.start;
+          document.getElementById('lessonEndInput').value = l.end;
+          document.getElementById('lessonRoomInput').value = l.room || '';
+          document.getElementById('lessonTeacherInput').value = l.teacher || '';
+          delBtn.classList.remove('hidden');
+        } else {
+          document.getElementById('lessonModalTitle').textContent = 'Новая пара';
+          document.getElementById('lessonForm').reset();
+          document.getElementById('lessonIdInput').value = '';
+          document.getElementById('lessonDayInput').value = String(selectedDay);
+          document.getElementById('lessonStartInput').value = '09:00';
+          document.getElementById('lessonEndInput').value = '10:30';
+          delBtn.classList.add('hidden');
+        }
+        modal.classList.remove('hidden');
+      }
+
+      function openHwModal(id = null, presetSubject = '') {
+        const modal = document.getElementById('hwModal');
+        const delBtn = document.getElementById('deleteHwBtn');
+        const dl = document.getElementById('subjectsDatalist');
+        const uniqueSubjects = [...new Set(state.lessons.map(l => l.subject))];
+        dl.innerHTML = uniqueSubjects.map(s => `<option value="${escapeHtml(s)}"></option>`).join('');
+
+        if (id) {
+          const h = state.homeworks.find(x => x.id === id);
+          if (!h) return;
+          document.getElementById('hwModalTitle').textContent = 'Редактировать ДЗ';
+          document.getElementById('hwIdInput').value = h.id;
+          document.getElementById('hwSubjectInput').value = h.subject;
+          document.getElementById('hwTextInput').value = h.text;
+          document.getElementById('hwDeadlineInput').value = h.deadline;
+          document.getElementById('hwPriorityInput').value = h.priority || 'normal';
+          document.getElementById('hwLinkInput').value = h.link || '';
+          delBtn.classList.remove('hidden');
+        } else {
+          document.getElementById('hwModalTitle').textContent = 'Новое задание';
+          document.getElementById('hwForm').reset();
+          document.getElementById('hwIdInput').value = '';
+          document.getElementById('hwSubjectInput').value = presetSubject;
+          document.getElementById('hwDeadlineInput').value = getOffsetDate(1);
+          delBtn.classList.add('hidden');
+        }
+        modal.classList.remove('hidden');
+      }
+
+      function applyImportData(payload, mode) {
+        if (!payload || (!Array.isArray(payload.lessons) && !Array.isArray(payload.homeworks))) {
+          showToast('Неверный формат данных');
+          return;
+        }
+        if (mode === 'replace') {
+          if (payload.groupName) state.groupName = payload.groupName;
+          if (payload.settings) {
+            state.settings = {
+              ...state.settings,
+              ...payload.settings,
+              adminPin: state.settings.adminPin,
+              adminIds: state.settings.adminIds
+            };
+          }
+          if (Array.isArray(payload.lessons)) state.lessons = payload.lessons;
+          if (Array.isArray(payload.homeworks)) state.homeworks = payload.homeworks;
+          showToast('Данные заменены');
+        } else {
+          if (Array.isArray(payload.lessons)) {
+            payload.lessons.forEach(l => {
+              state.lessons.push({ ...l, id: 'l_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6) });
+            });
+          }
+          if (Array.isArray(payload.homeworks)) {
+            payload.homeworks.forEach(h => {
+              state.homeworks.push({ ...h, id: 'h_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6) });
+            });
+          }
+          showToast('Добавлено к вашему расписанию');
+        }
+        saveState();
+        renderAll();
+      }
+
+      function checkIncomingShare() {
+        const hash = window.location.hash || '';
+        const startParam = tg?.initDataUnsafe?.start_param || '';
+        const raw = hash.includes('#share=') ? hash : (startParam ? startParam : '');
+        if (!raw) return;
+        try {
+          const payload = decodePayload(raw);
+          if (payload && (payload.lessons || payload.homeworks)) {
+            pendingImportPayload = payload;
+            const lCount = payload.lessons ? payload.lessons.length : 0;
+            const hCount = payload.homeworks ? payload.homeworks.length : 0;
+            document.getElementById('incomingShareSummary').textContent =
+              `${payload.groupName ? payload.groupName + ': ' : ''}пар — ${lCount}, заданий — ${hCount}`;
+            document.getElementById('incomingShareBanner').classList.remove('hidden');
+          }
+        } catch (e) { /* invalid share hash */ }
+      }
+
+      function switchTab(tab) {
+        if (tab === 'admin' && !isAdmin) return;
+        activeTab = tab;
+        ['schedule', 'homework', 'share', 'admin'].forEach(t => {
+          document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
+        });
+        document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+          const isCurrent = btn.dataset.tab === tab;
+          btn.style.color = isCurrent ? 'var(--tg-btn)' : '';
+          btn.classList.toggle('tg-text-hint', !isCurrent);
+          btn.classList.toggle('font-semibold', isCurrent);
+          btn.classList.toggle('font-medium', !isCurrent);
+        });
+        renderAll();
+      }
+
+      function updateThemeIcon() {
+        const isDark = document.documentElement.classList.contains('dark');
+        const icon = document.getElementById('themeIcon');
+        icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+        lucide.createIcons();
+      }
+
+      function renderAll() {
+        renderHeader();
+        if (activeTab === 'schedule') renderSchedule();
+        else if (activeTab === 'homework') renderHomework();
+        else if (activeTab === 'share') renderShare();
+        else if (activeTab === 'admin') renderAdmin();
+        lucide.createIcons();
+      }
+
+      // Event Listeners
+      document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      });
+
+      document.getElementById('quickShareBtn').addEventListener('click', () => switchTab('share'));
+
+      document.getElementById('themeToggleBtn').addEventListener('click', () => {
+        document.documentElement.classList.toggle('dark');
+        updateThemeIcon();
+      });
+
+      // Admin Auth & Toggle
+      document.getElementById('adminToggleBtn').addEventListener('click', () => {
+        if (isAdmin) {
+          switchTab('admin');
+        } else {
+          document.getElementById('adminAuthPinInput').value = '';
+          document.getElementById('adminAuthModal').classList.remove('hidden');
+        }
+      });
+
+      document.getElementById('closeAdminAuthBtn').addEventListener('click', () => {
+        document.getElementById('adminAuthModal').classList.add('hidden');
+      });
+
+      document.getElementById('adminAuthForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const entered = document.getElementById('adminAuthPinInput').value.trim();
+        const expected = state.settings.adminPin || '0000';
+        if (entered === expected) {
+          isAdmin = true;
+          saveAdminSession(true);
+          document.getElementById('adminAuthModal').classList.add('hidden');
+          switchTab('admin');
+          showToast('Режим супер-пользователя включён');
+        } else {
+          showToast('Неверный PIN-код');
+        }
+      });
+
+      document.getElementById('adminLogoutBtn').addEventListener('click', () => {
+        isAdmin = false;
+        saveAdminSession(false);
+        switchTab('schedule');
+        showToast('Вы вышли из режима админа');
+      });
+
+      document.querySelectorAll('.admin-sub-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          adminSubTab = btn.dataset.adminSub;
+          renderAdmin();
+        });
+      });
+
+      // Admin General Settings listeners
+      document.getElementById('adminGroupNameInput').addEventListener('input', e => {
+        state.groupName = e.target.value;
+        saveState();
+        renderHeader();
+      });
+      document.getElementById('adminSubtitleInput').addEventListener('input', e => {
+        state.settings.subtitleText = e.target.value;
+        saveState();
+        renderHeader();
+      });
+      document.getElementById('adminAnnouncementInput').addEventListener('input', e => {
+        state.settings.announcement = e.target.value;
+        saveState();
+        renderHeader();
+      });
+      document.querySelectorAll('.accent-dot').forEach(dot => {
+        dot.addEventListener('click', () => {
+          state.settings.accentColor = dot.dataset.accent;
+          saveState();
+          renderAll();
+        });
+      });
+      document.getElementById('adminShowSaturdayToggle').addEventListener('change', e => {
+        state.settings.showSaturday = e.target.checked;
+        saveState();
+        renderAll();
+      });
+      document.getElementById('adminAllowStudentEditToggle').addEventListener('change', e => {
+        state.settings.allowStudentEdit = e.target.checked;
+        saveState();
+        renderAll();
+      });
+
+      // Admin Bulk Actions
+      document.getElementById('adminAddLessonBtn').addEventListener('click', () => openLessonModal());
+      document.getElementById('adminClearLessonsBtn').addEventListener('click', () => {
+        state.lessons = [];
+        saveState();
+        renderAll();
+        showToast('Все пары удалены');
+      });
+
+      document.getElementById('adminMarkAllDoneBtn').addEventListener('click', () => {
+        state.homeworks.forEach(h => { h.done = true; });
+        saveState();
+        renderAll();
+        showToast('Все задания отмечены выполненными');
+      });
+      document.getElementById('adminClearDoneHwBtn').addEventListener('click', () => {
+        state.homeworks = state.homeworks.filter(h => !h.done);
+        saveState();
+        renderAll();
+        showToast('Сданные задания удалены');
+      });
+      document.getElementById('adminClearAllHwBtn').addEventListener('click', () => {
+        state.homeworks = [];
+        saveState();
+        renderAll();
+        showToast('Все задания удалены');
+      });
+
+      // Rename subject bulk
+      document.getElementById('closeRenameSubjectBtn').addEventListener('click', () => {
+        document.getElementById('renameSubjectModal').classList.add('hidden');
+      });
+      document.getElementById('renameSubjectForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const oldName = document.getElementById('oldSubjectNameInput').value;
+        const newName = document.getElementById('newSubjectNameInput').value.trim();
+        if (!newName) return;
+        state.lessons.forEach(l => { if (l.subject === oldName) l.subject = newName; });
+        state.homeworks.forEach(h => { if (h.subject === oldName) h.subject = newName; });
+        saveState();
+        document.getElementById('renameSubjectModal').classList.add('hidden');
+        renderAll();
+        showToast('Предмет переименован');
+      });
+
+      // Admin Access Settings
+      document.getElementById('adminSavePinBtn').addEventListener('click', () => {
+        const pin = document.getElementById('adminPinInput').value.trim();
+        if (!pin) { showToast('PIN не может быть пустым'); return; }
+        state.settings.adminPin = pin;
+        saveState();
+        showToast('PIN-код обновлён');
+      });
+      document.getElementById('adminIdsInput').addEventListener('input', e => {
+        state.settings.adminIds = e.target.value;
+        saveState();
+      });
+      document.getElementById('adminFactoryResetBtn').addEventListener('click', () => {
+        state = getDefaultState();
+        saveState();
+        renderAll();
+        showToast('Все данные сброшены к демо');
+      });
+
+      // Schedule & Homework standard listeners
+      document.getElementById('weekViewToggle').addEventListener('click', () => {
+        isWeekView = !isWeekView;
+        renderSchedule();
+      });
+
+      document.getElementById('addLessonBtn').addEventListener('click', () => openLessonModal());
+      document.getElementById('closeLessonModalBtn').addEventListener('click', () => document.getElementById('lessonModal').classList.add('hidden'));
+      document.getElementById('lessonForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const id = document.getElementById('lessonIdInput').value;
+        const item = {
+          id: id || 'l_' + Date.now(),
+          subject: document.getElementById('lessonSubjectInput').value.trim(),
+          day: Number(document.getElementById('lessonDayInput').value),
+          type: document.getElementById('lessonTypeInput').value,
+          start: document.getElementById('lessonStartInput').value,
+          end: document.getElementById('lessonEndInput').value,
+          room: document.getElementById('lessonRoomInput').value.trim(),
+          teacher: document.getElementById('lessonTeacherInput').value.trim()
+        };
+        if (id) {
+          const idx = state.lessons.findIndex(x => x.id === id);
+          if (idx >= 0) state.lessons[idx] = item;
+        } else {
+          state.lessons.push(item);
+        }
+        selectedDay = item.day;
+        isWeekView = false;
+        saveState();
+        document.getElementById('lessonModal').classList.add('hidden');
+        renderAll();
+        showToast('Пара сохранена');
+      });
+
+      document.getElementById('deleteLessonBtn').addEventListener('click', () => {
+        const id = document.getElementById('lessonIdInput').value;
+        state.lessons = state.lessons.filter(x => x.id !== id);
+        saveState();
+        document.getElementById('lessonModal').classList.add('hidden');
+        renderAll();
+        showToast('Пара удалена');
+      });
+
+      document.getElementById('addHwBtn').addEventListener('click', () => openHwModal());
+      document.getElementById('closeHwModalBtn').addEventListener('click', () => document.getElementById('hwModal').classList.add('hidden'));
+      document.getElementById('hwForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const id = document.getElementById('hwIdInput').value;
+        const existing = id ? state.homeworks.find(x => x.id === id) : null;
+        const item = {
+          id: id || 'h_' + Date.now(),
+          subject: document.getElementById('hwSubjectInput').value.trim(),
+          text: document.getElementById('hwTextInput').value.trim(),
+          deadline: document.getElementById('hwDeadlineInput').value,
+          priority: document.getElementById('hwPriorityInput').value,
+          link: document.getElementById('hwLinkInput').value.trim(),
+          done: existing ? existing.done : false
+        };
+        if (id) {
+          const idx = state.homeworks.findIndex(x => x.id === id);
+          if (idx >= 0) state.homeworks[idx] = item;
+        } else {
+          state.homeworks.push(item);
+        }
+        saveState();
+        document.getElementById('hwModal').classList.add('hidden');
+        renderAll();
+        showToast('Задание сохранено');
+      });
+
+      document.getElementById('deleteHwBtn').addEventListener('click', () => {
+        const id = document.getElementById('hwIdInput').value;
+        state.homeworks = state.homeworks.filter(x => x.id !== id);
+        saveState();
+        document.getElementById('hwModal').classList.add('hidden');
+        renderAll();
+        showToast('Задание удалено');
+      });
+
+      document.getElementById('hwSearchInput').addEventListener('input', e => {
+        hwSearch = e.target.value;
+        renderHomework();
+      });
+
+      document.querySelectorAll('.hw-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          hwFilter = btn.dataset.filter;
+          renderHomework();
+        });
+      });
+
+      document.getElementById('groupNameInput').addEventListener('input', e => {
+        state.groupName = e.target.value;
+        saveState();
+        renderHeader();
+        document.getElementById('shareTextPreview').textContent = buildShareText();
+      });
+
+      document.querySelectorAll('.share-scope-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          shareScope = btn.dataset.shareScope;
+          renderShare();
+        });
+      });
+
+      document.getElementById('sendToTelegramBtn').addEventListener('click', () => {
+        const shareUrl = buildShareUrl();
+        const text = buildShareText();
+        const tgShare = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
+        if (tg && typeof tg.openTelegramLink === 'function') {
+          try {
+            tg.openTelegramLink(tgShare);
+            return;
+          } catch (e) { /* fallback */ }
+        }
+        window.open(tgShare, '_blank', 'noopener');
+      });
+
+      document.getElementById('copyShareLinkBtn').addEventListener('click', () => {
+        copyToClipboard(buildShareUrl(), 'Ссылка скопирована');
+      });
+
+      document.getElementById('copyShareTextBtn').addEventListener('click', () => {
+        copyToClipboard(buildShareText(), 'Текст скопирован');
+      });
+
+      document.getElementById('applyImportMergeBtn').addEventListener('click', () => {
+        try {
+          const payload = decodePayload(document.getElementById('importCodeInput').value);
+          applyImportData(payload, 'merge');
+          document.getElementById('importCodeInput').value = '';
+        } catch (e) {
+          showToast('Не удалось распознать код или ссылку');
+        }
+      });
+
+      document.getElementById('applyImportReplaceBtn').addEventListener('click', () => {
+        try {
+          const payload = decodePayload(document.getElementById('importCodeInput').value);
+          applyImportData(payload, 'replace');
+          document.getElementById('importCodeInput').value = '';
+        } catch (e) {
+          showToast('Не удалось распознать код или ссылку');
+        }
+      });
+
+      document.getElementById('exportJsonBtn').addEventListener('click', () => {
+        copyToClipboard(JSON.stringify(state, null, 2), 'JSON скопирован в буфер');
+      });
+
+      document.getElementById('resetDemoBtn').addEventListener('click', () => {
+        state = getDefaultState();
+        saveState();
+        renderAll();
+        showToast('Демо-данные восстановлены');
+      });
+
+      document.getElementById('importMergeBtn').addEventListener('click', () => {
+        if (pendingImportPayload) applyImportData(pendingImportPayload, 'merge');
+        document.getElementById('incomingShareBanner').classList.add('hidden');
+      });
+
+      document.getElementById('importReplaceBtn').addEventListener('click', () => {
+        if (pendingImportPayload) applyImportData(pendingImportPayload, 'replace');
+        document.getElementById('incomingShareBanner').classList.add('hidden');
+      });
+
+      document.getElementById('dismissIncomingBtn').addEventListener('click', () => {
+        document.getElementById('incomingShareBanner').classList.add('hidden');
+      });
+
+      // Init
+      initTelegram();
+      checkIncomingShare();
+      updateThemeIcon();
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
