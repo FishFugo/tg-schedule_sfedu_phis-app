@@ -1,0 +1,23 @@
+name: Daily Schedule Digest
+
+on:
+  schedule:
+    # 04:30 UTC = 07:30 МСК (UTC+3). При необходимости измените время.
+    - cron: '30 4 * * 1-6'
+  workflow_dispatch:
+
+jobs:
+  send-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Cloudflare Worker Cron
+        env:
+          WORKER_URL: ${{ secrets.WORKER_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$WORKER_URL" ]; then
+            echo "WORKER_URL secret is not set"
+            exit 1
+          fi
+          BASE_URL="${WORKER_URL%/}"
+          curl -fsS "${BASE_URL}/cron?secret=${CRON_SECRET}"
